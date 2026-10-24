@@ -13,5 +13,6 @@ install:
 	@echo "已输出到 $(OUT)，在 chrome://extensions 加载该目录"
 
 zip: build
-	@cd "$(DIST)" && zip -qrFS "../$(NAME).zip" .
+	@rm -f "$(NAME).zip"
+	@cd "$(DIST)" && zip -qr "../$(NAME).zip" . -x '*.map'
 	@echo "已打包 $(NAME).zip"
