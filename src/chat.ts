@@ -57,7 +57,45 @@ function sendMessage(message: ResultMessage | { type: typeof READY_TYPE; session
   });
 }
 
+function initializeThoughtCollapse(): void {
+  const processedGroups = new WeakSet<Element>();
+
+  function collapseExpandedThoughts(): void {
+    const contents = document.querySelectorAll<HTMLElement>('.ds-message .ds-think-content');
+
+    for (const content of contents) {
+      const group = content.parentElement;
+      if (!group || processedGroups.has(group)) continue;
+
+      const header = group.firstElementChild as HTMLElement | null;
+      if (!header || !/思考|think|thought|reasoning/i.test(header.textContent ?? '')) continue;
+
+      processedGroups.add(group);
+      header.click();
+    }
+  }
+
+  collapseExpandedThoughts();
+
+  let scanTimer: ReturnType<typeof setTimeout> | undefined;
+  const observer = new MutationObserver(() => {
+    if (scanTimer !== undefined) return;
+
+    scanTimer = setTimeout(() => {
+      scanTimer = undefined;
+      collapseExpandedThoughts();
+    }, 100);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  window.addEventListener('pagehide', () => {
+    observer.disconnect();
+    clearTimeout(scanTimer);
+  }, { once: true });
+}
+
 if (window.parent !== window) {
+  initializeThoughtCollapse();
   let sessionId: string | undefined;
 
   window.addEventListener('message', (event: MessageEvent) => {
