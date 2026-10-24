@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeepSeek Sidebar 设置</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <main class="settings-shell">
+    <header class="page-header">
+      <div class="brand-mark" aria-hidden="true">D</div>
+      <div>
+        <p class="eyebrow">DEEPSEEK SIDEBAR</p>
+        <h1>偏好设置</h1>
+        <p class="intro">选择网页正文的提取方式和输出格式。</p>
+      </div>
+    </header>
+
+    <section class="settings-card" aria-labelledby="format-title">
+      <div class="section-heading">
+        <span class="section-icon" aria-hidden="true">Aa</span>
+        <div>
+          <h2 id="format-title">输出格式</h2>
+          <p>控制填入 DeepSeek 的正文样式</p>
+        </div>
+      </div>
+      <div class="choice-grid" role="group" aria-label="默认输出格式">
+        <button class="choice" type="button" data-format="text" aria-pressed="false">
+          <span class="choice-title">纯文本</span>
+          <span class="choice-description">干净简洁，适合快速阅读</span>
+        </button>
+        <button class="choice" type="button" data-format="markdown" aria-pressed="false">
+          <span class="choice-title">Markdown</span>
+          <span class="choice-description">保留标题、列表和代码格式</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-card" aria-labelledby="extractor-title">
+      <div class="section-heading">
+        <span class="section-icon sparkle" aria-hidden="true">✳</span>
+        <div>
+          <h2 id="extractor-title">正文提取器</h2>
+          <p>不同算法可能适合不同类型的网页</p>
+        </div>
+      </div>
+      <div class="choice-grid" role="group" aria-label="默认正文提取器">
+        <button class="choice" type="button" data-extractor="readability" aria-pressed="false">
+          <span class="choice-title">Readability</span>
+          <span class="choice-description">成熟轻量，聚焦文章正文</span>
+        </button>
+        <button class="choice" type="button" data-extractor="defuddle" aria-pressed="false">
+          <span class="choice-title">Defuddle</span>
+          <span class="choice-description">更好保留代码、脚注与页面结构</span>
+        </button>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <span>设置会自动保存，并同步到侧边栏。</span>
+      <span id="savedStatus" role="status" aria-live="polite"></span>
+    </footer>
+  </main>
+</body>
+</html>

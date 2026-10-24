@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,10 +9,13 @@
 </head>
 <body>
   <div class="tools">
-    <span id="prefillStatus" role="status" aria-live="polite"></span>
-    <div class="tool-actions">
-      <button id="insertLink" type="button" disabled>插入链接</button>
-      <button id="insertArticle" type="button" disabled>插入正文</button>
+    <div class="toolbar-row">
+      <span id="prefillStatus" role="status" aria-live="polite"></span>
+      <div class="tool-actions">
+        <a class="settings-link" href="../options/index.html" target="_blank" aria-label="打开设置" title="设置">⚙</a>
+        <button id="insertLink" type="button" disabled>插入链接</button>
+        <button id="insertArticle" class="primary" type="button" disabled>插入正文</button>
+      </div>
     </div>
   </div>
   <main>

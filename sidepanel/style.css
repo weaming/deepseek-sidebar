@@ -1,21 +1,44 @@
-:root { color-scheme: light dark; font-family: Arial, sans-serif; }
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --surface: #fff;
+  --surface-soft: #f5f6fb;
+  --text: #25283a;
+  --muted: #74798d;
+  --border: #e4e6ef;
+  --accent: #5965d8;
+}
+
 html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { display: flex; flex-direction: column; background: white; }
+body { display: flex; flex-direction: column; background: var(--surface); color: var(--text); }
 main { flex: 1; min-height: 0; }
 iframe { display: block; width: 100%; height: 100%; border: 0; }
-
-.tools { display: flex; align-items: center; gap: 8px; min-height: 44px; box-sizing: border-box; padding: 6px 8px; border-bottom: 1px solid #d1d5db; }
-.tool-actions { display: flex; flex: none; gap: 6px; margin-left: auto; }
-.tools button { min-height: 32px; padding: 6px 8px; border: 1px solid #bcc7e6; border-radius: 6px; background: #eef2ff; color: #273a92; cursor: pointer; font-size: 12px; white-space: nowrap; }
-.tools button:hover:not(:disabled) { background: #dfe7ff; }
-.tools button:disabled { opacity: .5; cursor: default; }
-.tools button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
-#prefillStatus { flex: 1; min-width: 0; overflow: hidden; color: #4b5563; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.tools { box-sizing: border-box; padding: 8px 10px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.toolbar-row, .tool-actions { display: flex; align-items: center; }
+.toolbar-row { min-height: 34px; gap: 8px; }
+.tool-actions { flex: none; gap: 6px; margin-left: auto; }
+.tools button:focus-visible, .settings-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tools button:disabled { opacity: .48; cursor: default; }
+.tool-actions > button { min-height: 32px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; font: inherit; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.tool-actions > button:hover:not(:disabled) { background: var(--surface-soft); }
+.tool-actions > button.primary { border-color: var(--accent); background: var(--accent); color: white; }
+.tool-actions > button.primary:hover:not(:disabled) { background: #4652c1; }
+.settings-link { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 8px; color: var(--muted); font-size: 17px; text-decoration: none; }
+.settings-link:hover { background: var(--surface-soft); color: var(--text); }
+#prefillStatus { min-width: 0; overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.extractor-switch { margin-left: auto; }
 
 @media (prefers-color-scheme: dark) {
-  body { background: #292a2d; color: white; }
-  .tools { border-color: #4b5563; }
-  .tools button { border-color: #586683; background: #313d56; color: #e2e8ff; }
-  .tools button:hover:not(:disabled) { background: #405274; }
-  #prefillStatus { color: #d1d5db; }
+  :root { --surface: #20212a; --surface-soft: #292b37; --text: #ececf4; --muted: #a5a8b8; --border: #393b49; --accent: #a0a8ff; }
+  .tool-actions > button.primary { color: #1e2030; }
+}
+
+@media (max-width: 340px) {
+  .tools { padding-inline: 6px; }
+  .tool-actions { gap: 3px; }
+  .tool-actions > button { padding-inline: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

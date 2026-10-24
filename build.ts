@@ -6,9 +6,11 @@ const DIST = join(ROOT, 'dist');
 const ENTRIES = [
   { input: 'src/background.ts', outputDir: '', outputName: 'background.js' },
   { input: 'src/chat.ts', outputDir: '', outputName: 'chat.js' },
+  { input: 'src/extractor.ts', outputDir: '', outputName: 'extractor.js' },
   { input: 'src/sidepanel.ts', outputDir: 'sidepanel', outputName: 'script.js' },
+  { input: 'src/options-entry.ts', outputDir: 'options', outputName: 'script.js' },
 ] as const;
-const STATIC_PATHS = ['manifest.json', 'images', 'sidepanel'] as const;
+const STATIC_PATHS = ['manifest.json', 'images', 'sidepanel', 'options'] as const;
 
 async function buildEntry(entry: typeof ENTRIES[number]): Promise<void> {
   const result = await Bun.build({

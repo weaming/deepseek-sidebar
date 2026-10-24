@@ -23,7 +23,8 @@
   "side_panel": {
     "default_path": "sidepanel/index.html"
   },
-  "permissions": ["sidePanel", "contextMenus", "declarativeNetRequest", "tabs", "scripting"],
+  "options_page": "options/index.html",
+  "permissions": ["sidePanel", "contextMenus", "declarativeNetRequest", "tabs", "scripting", "storage"],
   "host_permissions": ["https://chat.deepseek.com/*"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "content_scripts": [

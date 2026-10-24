@@ -8,7 +8,8 @@ test('the side panel inserts the active tab URL and article after the chat frame
   let chatMessageListener: ((message: object, sender: object, sendResponse: (response: object) => void) => void) | undefined;
   let linkClick: (() => void) | undefined;
   let articleClick: (() => void) | undefined;
-  let requestedOrigin: string | undefined;
+  let requestedOrigins: string[] | undefined;
+  let scriptCalls = 0;
 
   const linkButton = {
     disabled: true,
@@ -29,7 +30,10 @@ test('the side panel inserts the active tab URL and article after the chat frame
     insertArticle: articleButton,
     prefillStatus: status,
   };
-  const document = { getElementById: (id: string) => elements[id] };
+  const document = {
+    getElementById: (id: string) => elements[id],
+    querySelectorAll: () => [],
+  };
   const chrome = {
     runtime: {
       id: 'test-extension',
@@ -42,18 +46,27 @@ test('the side panel inserts the active tab URL and article after the chat frame
     },
     permissions: {
       request: async (permissions: { origins: string[] }) => {
-        requestedOrigin = permissions.origins[0];
+        requestedOrigins = permissions.origins;
         return true;
       },
+      contains: async () => false,
     },
-    scripting: {
-      executeScript: async () => [{ result: {
-        title: '测试文章',
-        url: 'https://example.com/article',
-        text: '文章正文',
-        isTruncated: false,
-      } }],
+    storage: {
+      sync: {
+        get: async () => ({ extractor: 'defuddle', format: 'markdown' }),
+        set: async () => {},
+      },
+      onChanged: { addListener: () => {} },
     },
+    scripting: { executeScript: async () => {
+      scriptCalls++;
+      return scriptCalls === 1 ? [] : [{ result: {
+          title: '测试文章',
+          url: 'https://example.com/article',
+          text: '文章正文',
+          isTruncated: false,
+        } }];
+    } },
   };
 
   Object.defineProperty(globalThis, 'document', { value: document, configurable: true });
@@ -91,7 +104,7 @@ test('the side panel inserts the active tab URL and article after the chat frame
     await Bun.sleep(0);
 
     const articleMessage = postedMessages.at(-1);
-    expect(requestedOrigin).toBe('https://example.com/*');
+    expect(requestedOrigins).toEqual(['http://*/*', 'https://*/*']);
     expect(articleMessage?.text).toBe('标题：测试文章\n链接：https://example.com/article\n\n文章正文');
 
     chatMessageListener?.(

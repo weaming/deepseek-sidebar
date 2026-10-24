@@ -1,4 +1,5 @@
 import { CHAT_ORIGIN, INSERT_TYPE, PING_TYPE, READY_TYPE, RESULT_TYPE, type ResultMessage } from './protocol';
+import { DEFAULT_SETTINGS, loadSettings, type AppSettings, type ExtractorName, type OutputFormat } from './settings';
 
 const INSERT_TIMEOUT_MS = 8000;
 
@@ -9,26 +10,8 @@ interface ArticleContent {
   isTruncated: boolean;
 }
 
-export function extractArticle(): ArticleContent {
-  const ARTICLE_LENGTH_LIMIT = 20000;
-  const article = document.querySelector<HTMLElement>('article, main') ?? document.body;
-  const rawText = article.innerText.replace(/\n{3,}/g, '\n\n').trim();
-
-  return {
-    title: document.title,
-    url: location.href,
-    text: rawText.slice(0, ARTICLE_LENGTH_LIMIT),
-    isTruncated: rawText.length > ARTICLE_LENGTH_LIMIT,
-  };
-}
-
 function isWebTab(tab: chrome.tabs.Tab | undefined): tab is chrome.tabs.Tab & { id: number; url: string } {
   return typeof tab?.id === 'number' && /^https?:\/\//.test(tab.url ?? '');
-}
-
-function hostPattern(url: string): string {
-  const parsedUrl = new URL(url);
-  return `${parsedUrl.protocol}//${parsedUrl.hostname}/*`;
 }
 
 export function initializePrefill(): void {
@@ -41,6 +24,7 @@ export function initializePrefill(): void {
   const sessionId = crypto.randomUUID();
   let isChatReady = false;
   let isBusy = false;
+  let settings: AppSettings = DEFAULT_SETTINGS;
   let pingTimer: ReturnType<typeof setInterval> | undefined;
   let statusTimer: ReturnType<typeof setTimeout> | undefined;
   let pendingRequest: {
@@ -176,21 +160,36 @@ export function initializePrefill(): void {
     setStatus('正在读取正文…');
 
     try {
-      const isGranted = await chrome.permissions.request({ origins: [hostPattern(tab.url)] });
-      if (!isGranted) throw new Error('未获得当前网站的读取权限');
+      const allWebOrigins = ['http://*/*', 'https://*/*'];
+      const hasPermission = await chrome.permissions.contains({ origins: allWebOrigins });
+      if (!hasPermission) {
+        const isGranted = await chrome.permissions.request({ origins: allWebOrigins });
+        if (!isGranted) throw new Error('未获得网页读取权限');
+      }
 
       const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (currentTab?.id !== tab.id || currentTab.url !== tab.url) {
         throw new Error('当前页面已变化，请重试');
       }
 
-      const [result] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extractArticle });
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['extractor.js'] });
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        args: [settings.extractor, settings.format] as [ExtractorName, OutputFormat],
+        func: (extractor, format) => (globalThis as typeof globalThis & {
+          deepseekSidebarExtractArticle?: (extractor: 'readability' | 'defuddle', format: 'text' | 'markdown') => ArticleContent | undefined;
+        }).deepseekSidebarExtractArticle?.(extractor, format),
+      });
       const article = result?.result;
       if (!article?.text) throw new Error('当前页面没有可读取的正文');
 
       const draft = `标题：${article.title}\n链接：${article.url}\n\n${article.text}`;
       await insertIntoChat(draft);
-      setStatus(article.isTruncated ? '已填入正文前 20000 字符，可编辑后发送' : '正文已填入，可编辑后发送');
+      const formatName = settings.format === 'markdown' ? 'Markdown' : '纯文本';
+      const extractorName = settings.extractor === 'defuddle' ? 'Defuddle' : 'Readability';
+      setStatus(article.isTruncated
+        ? `已填入前 20000 字符 · ${extractorName} / ${formatName}`
+        : `正文已填入 · ${extractorName} / ${formatName}`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
     } finally {
@@ -201,6 +200,15 @@ export function initializePrefill(): void {
 
   linkButton.addEventListener('click', () => { void insertLink(); });
   articleButton.addEventListener('click', () => { void insertArticle(); });
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'sync') return;
+    if (changes.extractor?.newValue === 'readability' || changes.extractor?.newValue === 'defuddle') {
+      settings = { ...settings, extractor: changes.extractor.newValue };
+    }
+    if (changes.format?.newValue === 'text' || changes.format?.newValue === 'markdown') {
+      settings = { ...settings, format: changes.format.newValue };
+    }
+  });
   chatFrame.addEventListener('load', startHandshake);
   chrome.runtime.onMessage.addListener(handleChatMessage);
   chrome.tabs.onActivated.addListener(() => { void refreshActiveTab(); });
@@ -209,5 +217,10 @@ export function initializePrefill(): void {
   });
 
   void refreshActiveTab();
+  void loadSettings().then((savedSettings) => {
+    settings = savedSettings;
+  }).catch((error: unknown) => {
+    setStatus(`无法读取设置：${error instanceof Error ? error.message : String(error)}`);
+  });
   startHandshake();
 }
