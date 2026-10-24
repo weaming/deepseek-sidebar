@@ -23,6 +23,15 @@
   "side_panel": {
     "default_path": "sidepanel/index.html"
   },
-  "permissions": ["sidePanel", "contextMenus", "storage", "declarativeNetRequest"],
-  "host_permissions": ["https://chat.deepseek.com/*"]
+  "permissions": ["sidePanel", "contextMenus", "storage", "declarativeNetRequest", "tabs", "scripting"],
+  "host_permissions": ["https://chat.deepseek.com/*"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://chat.deepseek.com/*"],
+      "js": ["chat.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ]
 }

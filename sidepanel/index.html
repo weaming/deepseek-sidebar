@@ -8,8 +8,15 @@
   <script src="script.js" defer></script>
 </head>
 <body>
+  <div class="tools">
+    <span id="prefillStatus" role="status" aria-live="polite"></span>
+    <div class="tool-actions">
+      <button id="insertLink" type="button" disabled>插入链接</button>
+      <button id="insertArticle" type="button" disabled>插入正文</button>
+    </div>
+  </div>
   <main>
-    <iframe title="DeepSeek Chat" src="https://chat.deepseek.com/" allow="clipboard-write; microphone; camera"></iframe>
+    <iframe id="chatFrame" title="DeepSeek Chat" src="https://chat.deepseek.com/" allow="clipboard-write; microphone; camera"></iframe>
   </main>
 </body>
 </html>

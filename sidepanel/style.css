@@ -3,6 +3,12 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 body { display: flex; flex-direction: column; background: white; }
 main { position: relative; flex: 1; min-height: 0; }
 iframe { display: block; width: 100%; height: 100%; border: 0; }
+.tools { display: flex; align-items: center; gap: 8px; min-height: 44px; box-sizing: border-box; padding: 6px 8px; border-bottom: 1px solid #d1d5db; }
+.tool-actions { display: flex; flex: none; gap: 6px; margin-left: auto; }
+.tools button { min-height: 32px; padding: 6px 8px; border: 1px solid #bcc7e6; border-radius: 6px; background: #eef2ff; color: #273a92; cursor: pointer; font-size: 12px; white-space: nowrap; }
+.tools button:hover:not(:disabled) { background: #dfe7ff; }
+.tools button:disabled { opacity: .5; cursor: default; }
+#prefillStatus { flex: 1; min-width: 0; overflow: hidden; color: #4b5563; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 
 .rating-prompt {
   position: absolute;
@@ -32,7 +38,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; }
 .star.animate { animation: star-pulse .5s ease-in-out; }
 .close-button { width: 18px; height: 18px; flex: none; padding: 0; border: 0; border-radius: 50%; background: none; color: #ff3b3b; cursor: pointer; font-size: 19px; line-height: 18px; }
 .close-button:hover { color: red; transform: scale(1.1); }
-.star:focus-visible, .close-button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
+.star:focus-visible, .close-button:focus-visible, .tools button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
 
 @keyframes slide-down { from { opacity: 0; transform: translate(-50%, -150%); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes slide-up { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -150%); } }
@@ -52,5 +58,11 @@ iframe { display: block; width: 100%; height: 100%; border: 0; }
   .close-button { position: absolute; top: 4px; right: 4px; }
 }
 
-@media (prefers-color-scheme: dark) { body { background: #292a2d; color: white; } }
+@media (prefers-color-scheme: dark) {
+  body { background: #292a2d; color: white; }
+  .tools { border-color: #4b5563; }
+  .tools button { border-color: #586683; background: #313d56; color: #e2e8ff; }
+  .tools button:hover:not(:disabled) { background: #405274; }
+  #prefillStatus { color: #d1d5db; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

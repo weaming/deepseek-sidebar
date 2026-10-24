@@ -1,3 +1,5 @@
+import { initializePrefill } from './prefill';
+
 const RATING_STATUS_KEY = 'ratingPromptStatus';
 const REQUIRED_OPENS = 5;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -130,3 +132,4 @@ async function initializeRatingPrompt(): Promise<void> {
 }
 
 initializeRatingPrompt();
+initializePrefill();

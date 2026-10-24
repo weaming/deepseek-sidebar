@@ -5,6 +5,7 @@ const ROOT = import.meta.dir;
 const DIST = join(ROOT, 'dist');
 const ENTRIES = [
   { input: 'src/background.ts', outputDir: '', outputName: 'background.js' },
+  { input: 'src/chat.ts', outputDir: '', outputName: 'chat.js' },
   { input: 'src/sidepanel.ts', outputDir: 'sidepanel', outputName: 'script.js' },
 ] as const;
 const STATIC_PATHS = ['manifest.json', 'images', 'sidepanel'] as const;
