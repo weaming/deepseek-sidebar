@@ -71,26 +71,3 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     console.error('Failed to open side panel:', error);
   });
 });
-
-let openCountQueue: Promise<number | void> = Promise.resolve();
-
-async function recordSidebarOpen(): Promise<number> {
-  const { sidebarOpenCount = 0 } = await chrome.storage.local.get('sidebarOpenCount');
-  const nextCount = sidebarOpenCount + 1;
-  await chrome.storage.local.set({ sidebarOpenCount: nextCount });
-  return nextCount;
-}
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message?.type !== 'sidebarOpened' || sender.id !== chrome.runtime.id) return false;
-
-  openCountQueue = openCountQueue.catch(() => undefined).then(recordSidebarOpen);
-  openCountQueue.then(
-    (count) => sendResponse({ count }),
-    (error: Error) => {
-      console.error('Failed to record side panel opening:', error);
-      sendResponse({ error: error.message });
-    },
-  );
-  return true;
-});
