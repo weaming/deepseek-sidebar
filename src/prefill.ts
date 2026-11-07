@@ -1,7 +1,8 @@
-import { CHAT_ORIGIN, INSERT_TYPE, PING_TYPE, READY_TYPE, RESULT_TYPE, type ResultMessage } from './protocol';
+import { CHAT_ORIGIN, INSERT_TYPE, PING_TYPE, READY_TYPE, RELOAD_TYPE, RESULT_TYPE, type ResultMessage } from './protocol';
 import { DEFAULT_SETTINGS, loadSettings, type AppSettings, type ExtractorName, type OutputFormat } from './settings';
 
 const INSERT_TIMEOUT_MS = 8000;
+const RELOAD_FALLBACK_MS = 2500;
 
 interface ArticleContent {
   title: string;
@@ -18,6 +19,7 @@ export function initializePrefill(): void {
   const chatFrame = document.getElementById('chatFrame') as HTMLIFrameElement;
   const linkButton = document.getElementById('insertLink') as HTMLButtonElement;
   const articleButton = document.getElementById('insertArticle') as HTMLButtonElement;
+  const reloadButton = document.getElementById('reloadChat') as HTMLButtonElement;
   const status = document.getElementById('prefillStatus') as HTMLSpanElement;
 
   let activeTab: chrome.tabs.Tab | undefined;
@@ -27,6 +29,7 @@ export function initializePrefill(): void {
   let settings: AppSettings = DEFAULT_SETTINGS;
   let pingTimer: ReturnType<typeof setInterval> | undefined;
   let statusTimer: ReturnType<typeof setTimeout> | undefined;
+  let reloadTimer: ReturnType<typeof setTimeout> | undefined;
   let pendingRequest: {
     id: string;
     resolve: () => void;
@@ -64,6 +67,9 @@ export function initializePrefill(): void {
   }
 
   function startHandshake(): void {
+    clearTimeout(reloadTimer);
+    reloadTimer = undefined;
+
     if (pendingRequest) {
       clearTimeout(pendingRequest.timeout);
       pendingRequest.reject(new Error('DeepSeek 页面已重新加载，请重试'));
@@ -87,6 +93,26 @@ export function initializePrefill(): void {
 
     ping();
     pingTimer = setInterval(ping, 1000);
+  }
+
+  // 优先让内容脚本就地重载，保留当前对话；内容脚本无响应时回退到重新导航首页
+  function reloadChat(): void {
+    isChatReady = false;
+    updateButtons();
+    setStatus('正在刷新 DeepSeek 页面…');
+    clearTimeout(reloadTimer);
+    reloadTimer = undefined;
+
+    if (!chatFrame.contentWindow) {
+      chatFrame.src = `${CHAT_ORIGIN}/`;
+      return;
+    }
+
+    chatFrame.contentWindow.postMessage({ type: RELOAD_TYPE, sessionId }, CHAT_ORIGIN);
+    reloadTimer = setTimeout(() => {
+      reloadTimer = undefined;
+      chatFrame.src = `${CHAT_ORIGIN}/`;
+    }, RELOAD_FALLBACK_MS);
   }
 
   function handleChatMessage(
@@ -200,6 +226,7 @@ export function initializePrefill(): void {
 
   linkButton.addEventListener('click', () => { void insertLink(); });
   articleButton.addEventListener('click', () => { void insertArticle(); });
+  reloadButton.addEventListener('click', reloadChat);
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'sync') return;
     if (changes.extractor?.newValue === 'readability' || changes.extractor?.newValue === 'defuddle') {

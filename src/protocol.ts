@@ -3,6 +3,7 @@ export const PING_TYPE = 'deepseek-sidebar:ping';
 export const READY_TYPE = 'deepseek-sidebar:ready';
 export const INSERT_TYPE = 'deepseek-sidebar:insert';
 export const RESULT_TYPE = 'deepseek-sidebar:result';
+export const RELOAD_TYPE = 'deepseek-sidebar:reload';
 
 export interface InsertMessage {
   type: typeof INSERT_TYPE;
@@ -16,4 +17,9 @@ export interface ResultMessage {
   sessionId: string;
   requestId: string;
   error?: string;
+}
+
+export interface ReloadMessage {
+  type: typeof RELOAD_TYPE;
+  sessionId: string;
 }

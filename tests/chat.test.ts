@@ -6,6 +6,7 @@ test('only the extension page can append text to the DeepSeek editor', () => {
   const sentMessages: Array<{ type: string; sessionId: string; requestId?: string; error?: string }> = [];
   const inputEvents: string[] = [];
   let messageListener: ((event: { source: object; origin: string; data: object }) => void) | undefined;
+  let reloads = 0;
 
   class FakeTextarea {
     private currentValue = '已有内容';
@@ -28,6 +29,7 @@ test('only the extension page can append text to the DeepSeek editor', () => {
   const parent = {};
   const window = {
     parent,
+    location: { reload: () => { reloads++; } },
     addEventListener: (type: string, listener: typeof messageListener) => {
       if (type === 'message') messageListener = listener;
     },
@@ -66,10 +68,17 @@ test('only the extension page can append text to the DeepSeek editor', () => {
   messageListener?.({ source: parent, origin: 'https://other.example', data: request });
   expect(editor.value).toBe('已有内容');
 
+  const reloadRequest = { type: 'deepseek-sidebar:reload', sessionId: 'session-1' };
+  messageListener?.({ source: parent, origin: 'chrome-extension://test-extension', data: { ...reloadRequest, sessionId: 'other' } });
+  expect(reloads).toBe(0);
+
   messageListener?.({ source: parent, origin: 'chrome-extension://test-extension', data: request });
   expect(editor.value).toBe('已有内容\n\nhttps://example.com/');
   expect(inputEvents).toEqual(['input']);
   expect(sentMessages.at(-1)).toEqual({ type: 'deepseek-sidebar:result', sessionId: 'session-1', requestId: 'request-1' });
+
+  messageListener?.({ source: parent, origin: 'chrome-extension://test-extension', data: reloadRequest });
+  expect(reloads).toBe(1);
 });
 
 test('thinking content starts collapsed and stays open after a manual expansion', () => {

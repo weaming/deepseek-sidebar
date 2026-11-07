@@ -8,6 +8,7 @@ test('the side panel inserts the active tab URL and article after the chat frame
   let chatMessageListener: ((message: object, sender: object, sendResponse: (response: object) => void) => void) | undefined;
   let linkClick: (() => void) | undefined;
   let articleClick: (() => void) | undefined;
+  let reloadClick: (() => void) | undefined;
   let requestedOrigins: string[] | undefined;
   let scriptCalls = 0;
 
@@ -19,13 +20,18 @@ test('the side panel inserts the active tab URL and article after the chat frame
     disabled: true,
     addEventListener: (_event: string, listener: () => void) => { articleClick = listener; },
   };
+  const reloadButton = {
+    addEventListener: (_event: string, listener: () => void) => { reloadClick = listener; },
+  };
   const status = { textContent: '' };
   const chatFrame = {
+    src: 'https://chat.deepseek.com/',
     contentWindow: { postMessage: (message: typeof postedMessages[number]) => { postedMessages.push(message); } },
     addEventListener: () => {},
   };
   const elements: Record<string, object> = {
     chatFrame,
+    reloadChat: reloadButton,
     insertLink: linkButton,
     insertArticle: articleButton,
     prefillStatus: status,
@@ -113,10 +119,17 @@ test('the side panel inserts the active tab URL and article after the chat frame
       () => {},
     );
     await Bun.sleep(0);
-    expect(status.textContent).toBe('正文已填入，可编辑后发送');
+    expect(status.textContent).toBe('正文已填入 · Defuddle / Markdown');
 
     await Bun.sleep(3100);
     expect(status.textContent).toBe('');
+
+    reloadClick?.();
+    const reloadMessage = postedMessages.at(-1);
+    expect(reloadMessage?.type).toBe('deepseek-sidebar:reload');
+    expect(reloadMessage?.sessionId).toBe(sessionId);
+    expect(status.textContent).toBe('正在刷新 DeepSeek 页面…');
+    expect(linkButton.disabled).toBe(true);
   } finally {
     if (originalDocument) Object.defineProperty(globalThis, 'document', originalDocument);
     else Reflect.deleteProperty(globalThis, 'document');

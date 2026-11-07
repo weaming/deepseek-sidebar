@@ -1,4 +1,4 @@
-import { INSERT_TYPE, PING_TYPE, READY_TYPE, RESULT_TYPE, type ResultMessage } from './protocol';
+import { INSERT_TYPE, PING_TYPE, READY_TYPE, RELOAD_TYPE, RESULT_TYPE, type ResultMessage } from './protocol';
 
 const EXTENSION_ORIGIN = chrome.runtime.getURL('').replace(/\/$/, '');
 const MAX_INSERT_LENGTH = 30000;
@@ -111,6 +111,12 @@ if (window.parent !== window) {
       if (typeof message.sessionId !== 'string') return;
       sessionId = message.sessionId;
       sendMessage({ type: READY_TYPE, sessionId });
+      return;
+    }
+
+    if (message?.type === RELOAD_TYPE) {
+      if (!sessionId || message.sessionId !== sessionId) return;
+      window.location.reload();
       return;
     }
 
