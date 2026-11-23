@@ -105,10 +105,12 @@ test('thinking content starts collapsed and stays open after a manual expansion'
   const secondContent = { parentElement: secondGroup };
   const document = {
     body: {},
-    querySelectorAll: () => [
-      ...(firstExpanded ? [firstContent] : []),
-      ...(secondExpanded ? [secondContent] : []),
-    ],
+    querySelectorAll: (selector: string) => selector === '.ds-message .ds-think-content'
+      ? [
+        ...(firstExpanded ? [firstContent] : []),
+        ...(secondExpanded ? [secondContent] : []),
+      ]
+      : [],
   };
   const window = { parent: {}, addEventListener: () => {} };
   const chrome = { runtime: { getURL: () => 'chrome-extension://test-extension/' } };
@@ -142,4 +144,71 @@ test('thinking content starts collapsed and stays open after a manual expansion'
   scheduledScan?.();
   expect(secondClicks).toBe(1);
   expect(secondExpanded).toBe(false);
+});
+
+test('browser plugin notice banner is hidden automatically while other cookie banners stay visible', () => {
+  let onMutation: (() => void) | undefined;
+  let scheduledScan: (() => void) | undefined;
+
+  function createBanner(title: string, description: string) {
+    const style = {
+      display: '',
+      priority: '',
+      setProperty(name: string, value: string, priority = '') {
+        if (name === 'display') {
+          this.display = value;
+          this.priority = priority;
+        }
+      },
+    };
+
+    return {
+      style,
+      querySelector(selector: string) {
+        if (selector === '.cookie_banner-title') return { textContent: title };
+        if (selector === '.cookie_banner-description') return { textContent: description };
+        return null;
+      },
+    };
+  }
+
+  const pluginNotice = createBanner(
+    '请检查浏览器插件',
+    '广告拦截、隐私保护等浏览器插件可能会拦截 DeepSeek 的必要请求，影响正常使用。',
+  );
+  const cookieNotice = createBanner('Cookie 设置', '我们使用必要的 Cookie 来提供服务。');
+  const latePluginNotice = createBanner('请检查浏览器插件', '请尝试暂时关闭相关插件。');
+  const banners = [pluginNotice, cookieNotice];
+
+  const document = {
+    body: {},
+    querySelectorAll: (selector: string) => selector === '.cookie_banner-wrap' ? banners : [],
+  };
+  const window = { parent: {}, addEventListener: () => {} };
+  const chrome = { runtime: { getURL: () => 'chrome-extension://test-extension/' } };
+  class FakeMutationObserver {
+    constructor(callback: () => void) { onMutation = callback; }
+    observe(): void {}
+    disconnect(): void {}
+  }
+
+  const code = readFileSync(new URL('../dist/chat.js', import.meta.url), 'utf8');
+  runInNewContext(code, {
+    window,
+    document,
+    chrome,
+    MutationObserver: FakeMutationObserver,
+    setTimeout: (callback: () => void) => { scheduledScan = callback; return 1; },
+    clearTimeout: () => {},
+  });
+
+  expect(pluginNotice.style.display).toBe('none');
+  expect(pluginNotice.style.priority).toBe('important');
+  expect(cookieNotice.style.display).toBe('');
+
+  banners.push(latePluginNotice);
+  onMutation?.();
+  scheduledScan?.();
+  expect(latePluginNotice.style.display).toBe('none');
+  expect(latePluginNotice.style.priority).toBe('important');
 });

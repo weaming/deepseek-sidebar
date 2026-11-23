@@ -2,6 +2,10 @@ import { INSERT_TYPE, PING_TYPE, READY_TYPE, RELOAD_TYPE, RESULT_TYPE, type Resu
 
 const EXTENSION_ORIGIN = chrome.runtime.getURL('').replace(/\/$/, '');
 const MAX_INSERT_LENGTH = 30000;
+const THOUGHT_CONTENT_SELECTOR = '.ds-message .ds-think-content';
+const PLUGIN_NOTICE_SELECTOR = '.cookie_banner-wrap';
+const PLUGIN_NOTICE_TITLE_PATTERN = /请检查浏览器插件|check.*browser.*extension/i;
+const PLUGIN_NOTICE_DESC_PATTERN = /广告拦截|隐私保护|ad\s*block|privacy.*extension/i;
 
 function findEditor(): HTMLTextAreaElement | HTMLElement | null {
   const selectors = ['textarea', '[contenteditable="true"][role="textbox"]', '[contenteditable="true"]'];
@@ -57,11 +61,28 @@ function sendMessage(message: ResultMessage | { type: typeof READY_TYPE; session
   });
 }
 
-function initializeThoughtCollapse(): void {
+function isPluginNoticeBanner(banner: HTMLElement): boolean {
+  const title = banner.querySelector('.cookie_banner-title')?.textContent?.trim() ?? '';
+  if (PLUGIN_NOTICE_TITLE_PATTERN.test(title)) return true;
+
+  const description = banner.querySelector('.cookie_banner-description')?.textContent?.trim() ?? '';
+  return PLUGIN_NOTICE_DESC_PATTERN.test(description);
+}
+
+function hidePluginNotices(): void {
+  const banners = document.querySelectorAll<HTMLElement>(PLUGIN_NOTICE_SELECTOR);
+
+  for (const banner of banners) {
+    if (banner.style.display === 'none' || !isPluginNoticeBanner(banner)) continue;
+    banner.style.setProperty('display', 'none', 'important');
+  }
+}
+
+function initializePageEnhancements(): void {
   const processedGroups = new WeakSet<Element>();
 
   function collapseExpandedThoughts(): void {
-    const contents = document.querySelectorAll<HTMLElement>('.ds-message .ds-think-content');
+    const contents = document.querySelectorAll<HTMLElement>(THOUGHT_CONTENT_SELECTOR);
 
     for (const content of contents) {
       const group = content.parentElement;
@@ -75,7 +96,12 @@ function initializeThoughtCollapse(): void {
     }
   }
 
-  collapseExpandedThoughts();
+  function applyEnhancements(): void {
+    collapseExpandedThoughts();
+    hidePluginNotices();
+  }
+
+  applyEnhancements();
 
   let scanTimer: ReturnType<typeof setTimeout> | undefined;
   const observer = new MutationObserver(() => {
@@ -83,7 +109,7 @@ function initializeThoughtCollapse(): void {
 
     scanTimer = setTimeout(() => {
       scanTimer = undefined;
-      collapseExpandedThoughts();
+      applyEnhancements();
     }, 100);
   });
   observer.observe(document.body, { childList: true, subtree: true });
@@ -95,7 +121,7 @@ function initializeThoughtCollapse(): void {
 }
 
 if (window.parent !== window) {
-  initializeThoughtCollapse();
+  initializePageEnhancements();
   let sessionId: string | undefined;
 
   window.addEventListener('message', (event: MessageEvent) => {
